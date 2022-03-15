@@ -54,3 +54,4 @@ pygame.quit()
 
 stats = pstats.Stats(profiler).sort_stats('ncalls')
 stats.print_stats()
+test
