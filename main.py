@@ -14,7 +14,7 @@ running = True
 size = (0, 0, 5, 5)
 testImage = pg.image.load('./testimage.png').convert_alpha()
 testImage_rect = testImage.get_rect()
-
+# pg.mask.from_surface(surface, testImage)
 
 # create the grid of pixels
 def grid():
@@ -40,6 +40,7 @@ def repulsion():
 
     mouseX, mouseY = pygame.mouse.get_pos()
 
+
 while running:
     for event in pg.event.get():
         if event.type == pg.QUIT:
@@ -54,4 +55,3 @@ pygame.quit()
 
 stats = pstats.Stats(profiler).sort_stats('ncalls')
 stats.print_stats()
-test
