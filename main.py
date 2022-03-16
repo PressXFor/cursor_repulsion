@@ -1,57 +1,64 @@
 import pygame
-import pygame as pg
-from numpy import sin, cos, deg2rad
-import cProfile
-import pstats
+import random
 
-profiler = cProfile.Profile()
+pygame.init()
 
-pg.init()
-DISPLAY_W, DISPLAY_H = 1000, 700
-surface = pg.display.set_mode((DISPLAY_W, DISPLAY_H))
-running = True
 
-size = (0, 0, 5, 5)
-testImage = pg.image.load('./testimage.png').convert_alpha()
-testImage_rect = testImage.get_rect()
-# pg.mask.from_surface(surface, testImage)
+class Particle:
+    def __init__(self, color, position, screen):
+        self.color = color
+        self.pos = position
+        self.screen = screen
+        self.size = (1, 1)
+        self.image = pygame.Surface(self.size)
+        self.image.fill(self.color)
+        self.rect = self.image.get_rect(topleft=self.pos)
 
-# create the grid of pixels
-def grid():
-    global particles
-    global goi
-    particlesize = 5
+    def move(self):
+        self.pos = (self.pos[0] + random.uniform(-1, 1), self.pos[1] + random.uniform(-1, 1))
+        self.rect.topleft = self.pos
 
+    def draw(self):
+        self.screen.blit(self.image, self.rect)
+
+
+screen = pygame.display.set_mode((700, 500))
+clock = pygame.time.Clock()
+
+font = pygame.font.SysFont('arial', 32)
+image = font.render(input("Enter your text\n"), True, (255, 0, 0))
+# image = pygame.image.load("testimage.png").convert_alpha()
+image_rect = image.get_rect(topleft=(100, 100))
+
+
+def generate_particles(screen, relative_position, image):
     particles = []
-    goi = 0
-
-    pg.draw.rect(surface, 'white', testImage_rect, 1)
-
-    for x in range(DISPLAY_W):
-        for y in range(DISPLAY_H):
-            rect = pg.Rect(x * particlesize, y * particlesize, particlesize, particlesize)
-            if testImage_rect.colliderect(rect):
-                particles.append(rect)
-                pygame.draw.rect(surface, 'white', rect, 1)
-                goi += 1
-
-
-def repulsion():
-
-    mouseX, mouseY = pygame.mouse.get_pos()
+    alphas = pygame.surfarray.array_alpha(image)
+    colors = pygame.surfarray.array3d(image)
+    for i, row in enumerate(alphas):
+        for j, alpha in enumerate(row):
+            if alpha:
+                pos = (relative_position[0] + i, relative_position[1] + j)
+                color = colors[i][j]
+                new_particle = Particle(color, pos, screen)
+                particles.append(new_particle)
+    return particles
 
 
+particles = generate_particles(screen, (100, 100), image)
+particle_rects = [p.rect for p in particles]
+
+running = True
 while running:
-    for event in pg.event.get():
-        if event.type == pg.QUIT:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
             running = False
 
-    profiler.enable()
-    grid()
-    profiler.disable()
-    pg.display.update()
+    screen.fill((255, 255, 255, 255))
+    for particle in particles:
+        particle.draw()
+        # particle.move()
+    pygame.display.update()
 
-pygame.quit()
-
-stats = pstats.Stats(profiler).sort_stats('ncalls')
-stats.print_stats()
+    print(clock.get_fps())
+    clock.tick(60)
