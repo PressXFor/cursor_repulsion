@@ -7,7 +7,7 @@ pygame.init()
 class Particle:
     def __init__(self, color, position, screen, startDir):
         self.color = color
-        self.pos = pygame.math.Vector2(position)
+        self.pos = position
         self.dir = pygame.math.Vector2(startDir).normalize()
         self.screen = screen
         self.size = (1, 1)
@@ -17,6 +17,11 @@ class Particle:
 
     def draw(self):
         pygame.draw.rect(self.screen, self.color, pygame.Rect(self.pos, self.size))
+
+    def attract(self):
+
+
+
 
     # def reflect(self, newDir):
     #     self.dir = self.dir.reflect(pygame.math.Vector2(newDir))
@@ -29,7 +34,7 @@ image = pygame.image.load("testimage.png").convert_alpha()
 image_rect = image.get_rect(topleft=(100, 100))
 
 
-def generate_particles(screen, relative_position, image, startDir):
+def generate_particles(screen, relative_position, image):
     particles = []
     alphas = pygame.surfarray.array_alpha(image)
     colors = pygame.surfarray.array3d(image)
@@ -38,12 +43,12 @@ def generate_particles(screen, relative_position, image, startDir):
             if alpha:
                 pos = (relative_position[0] + i, relative_position[1] + j)
                 color = colors[i][j]
-                new_particle = Particle(color, pos, screen, startDir)
+                new_particle = Particle(color, pos, screen)
                 particles.append(new_particle)
     return particles
 
 
-particles = generate_particles(screen, (100, 100), image, startDir=(0, 1))
+particles = generate_particles(screen, (100, 100), image)
 
 # d = sqrt((x2 - x1)^2 + (y2 - y1)^2)
 # def collision():
