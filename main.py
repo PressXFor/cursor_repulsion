@@ -21,12 +21,11 @@ def get_movement(angle, speed):
 
 
 class Particle:
-    def __init__(self, color, position, screen, startDir, speed):
+    def __init__(self, color, position, screen, speed):
         self.color = color
         self.pos = pygame.math.Vector2(position)
-        self.dir = pygame.math.Vector2(startDir).normalize()
         self.screen = screen
-        self.size = (1, 1)
+        self.size = (2, 2)
         self.speed = speed
         self.origin = pygame.math.Vector2(position)
 
@@ -40,11 +39,11 @@ class Particle:
         else:
             self.pos += v
 
-    # def move(self):
-    #     self.pos = (self.pos[0] + random.uniform(-1, 1), self.pos[1] + random.uniform(-1, 1))
+    def move(self):
+        self.pos = (self.pos[0] + random.uniform(-1, 1), self.pos[1] + random.uniform(-1, 1))
 
-    def repulsion(self):
-        if pygame.math.Vector2.distance_to(mouse_pos, self.pos) < 20:
+    def repulsion(self, dt, mouse_pos):
+        if distance_to(self.pos, mouse_pos) < 60:
             angle = pygame.Vector2.angle_to(self.pos, mouse_pos)
             dx, dy = get_movement(angle, self.speed)
             self.pos[0] -= dx * dt
@@ -61,21 +60,22 @@ image = pygame.image.load("testimage.png").convert_alpha()
 image_rect = image.get_rect(topleft=(100, 100))
 
 
-def generate_particles(screen, relative_position, image, startDir):
+def generate_particles(screen, relative_position, image):
     particles = []
     alphas = pygame.surfarray.array_alpha(image)
     colors = pygame.surfarray.array3d(image)
-    for i, row in enumerate(alphas):
-        for j, alpha in enumerate(row):
+    for i, row in enumerate(alphas[::2]):
+        for j, alpha in enumerate(row[::2]):
             if alpha:
-                pos = (relative_position[0] + i, relative_position[1] + j)
+                pos = (relative_position[0] + i*2, relative_position[1] + j*2)
                 color = colors[i][j]
-                new_particle = Particle(color, pos, screen, startDir, speed=20)
+                new_particle = Particle(color, pos, screen, speed=0.5)
                 particles.append(new_particle)
     return particles
 
 
-particles = generate_particles(screen, (100, 100), image, startDir=(0, 1))
+particles = generate_particles(screen, (100, 100), image)
+
 
 running = True
 while running:
@@ -86,17 +86,17 @@ while running:
     screen.fill((255, 255, 255, 255))
 
     mouse_pos = pygame.mouse.get_pos()
-    cursor = pygame.draw.circle(screen, 'Red', mouse_pos, 20)
+    # cursor = pygame.draw.circle(screen, 'Red', mouse_pos, 20)
 
     mouse_pos = pygame.math.Vector2(mouse_pos)
 
-    dt = clock.tick() / 1000
+    dt = clock.tick() / 2
     dt *= 60
 
     for particle in particles:
-        particle.attract()
         particle.draw()
-        particle.repulsion()
+        # particle.attract()
+        particle.repulsion(d t, mouse_pos)
         # particle.move()
     pygame.display.flip()
 
