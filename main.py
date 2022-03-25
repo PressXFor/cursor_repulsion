@@ -96,7 +96,7 @@ while running:
     for particle in particles:
         particle.draw()
         # particle.attract()
-        particle.repulsion(d t, mouse_pos)
+        particle.repulsion(dt, mouse_pos)
         # particle.move()
     pygame.display.flip()
 
