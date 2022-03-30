@@ -28,29 +28,53 @@ class Particle:
         self.size = (2, 2)
         self.speed = speed
         self.origin = pygame.math.Vector2(position)
-
-    def attract(self):
-        v = self.origin - self.pos  # order may need to be changed
-        if v.x == v.y == 0:
-            return
-        if self.speed > v.magnitude():
-            v_scaled = self.speed * v.normalize()
-            self.pos += v_scaled
-        else:
-            self.pos += v
-
-    def move(self):
-        self.pos = (self.pos[0] + random.uniform(-1, 1), self.pos[1] + random.uniform(-1, 1))
-
-    def repulsion(self, dt, mouse_pos):
-        if distance_to(self.pos, mouse_pos) < 60:
-            angle = pygame.Vector2.angle_to(self.pos, mouse_pos)
-            dx, dy = get_movement(angle, self.speed)
-            self.pos[0] -= dx * dt
-            self.pos[1] -= dy * dt
+        self.mass = 1
+        self.k = 2
+        self.b = 1
+        self.velocity = pygame.math.Vector2(0, 0)
 
     def draw(self):
         pygame.draw.rect(self.screen, self.color, pygame.Rect(self.pos, self.size))
+
+    def handle_forces(self, dt, mouse_pos):
+        dt /= 1000
+        vector_from_origin = self.pos - self.origin
+        vector_from_mouse = self.pos - mouse_pos
+        origin_dist = vector_from_origin.magnitude()
+        mouse_dist = vector_from_mouse.magnitude()
+
+        if vector_from_mouse == pygame.Vector2(0, 0):
+            options = [pygame.Vector2(i, j) for i in range(-1, 2) for j in range(-1, 2)]
+            while vector_from_mouse == pygame.Vector2(0, 0):
+                vector_from_mouse += random.choice(options)  # no divide by zero in next step, slightly hacky
+
+        if origin_dist == 0:
+            attract = False
+        else:
+            attract = True
+
+        if mouse_dist < 60:
+            repulse = True
+        else:
+            repulse = False
+
+        if attract and not repulse:
+            # as if it is attached to a damped spring
+            attract_vector = - self.k * vector_from_origin - self.b * self.velocity
+        else:
+            attract_vector = pygame.Vector2(0, 0)
+
+        if repulse:
+            unit_mouse = vector_from_mouse.normalize()
+            repulsion_vector = unit_mouse * self.speed
+        else:
+            repulsion_vector = pygame.Vector2(0, 0)
+
+        self.net_force = attract_vector + repulsion_vector
+        self.acceleration = self.net_force / self.mass
+        # self.pos += self.velocity * dt + (self.acceleration * (dt ** 2)) / 2
+        self.pos += self.velocity * dt
+        self.velocity += self.acceleration * dt
 
 
 screen = pygame.display.set_mode((700, 500))
@@ -64,18 +88,17 @@ def generate_particles(screen, relative_position, image):
     particles = []
     alphas = pygame.surfarray.array_alpha(image)
     colors = pygame.surfarray.array3d(image)
-    for i, row in enumerate(alphas[::2]):
-        for j, alpha in enumerate(row[::2]):
+    for i, row in enumerate(alphas[::5]):
+        for j, alpha in enumerate(row[::5]):
             if alpha:
-                pos = (relative_position[0] + i*2, relative_position[1] + j*2)
+                pos = (relative_position[0] + i * 5, relative_position[1] + j * 5)
                 color = colors[i][j]
-                new_particle = Particle(color, pos, screen, speed=0.5)
+                new_particle = Particle(color, pos, screen, speed=100)
                 particles.append(new_particle)
     return particles
 
 
 particles = generate_particles(screen, (100, 100), image)
-
 
 running = True
 while running:
@@ -94,10 +117,10 @@ while running:
     dt *= 60
 
     for particle in particles:
+        particle.handle_forces(dt, mouse_pos)
         particle.draw()
         # particle.attract()
-        particle.repulsion(dt, mouse_pos)
-        # particle.move()
+        # particle.repulsion(dt, mouse_pos)
     pygame.display.flip()
 
     clock.tick(60)
